@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Treeni</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+      background: #000000;
+      color: #ffffff;
+      min-height: 100vh;
+      font-size: 17px;
+      line-height: 1.4;
+    }
+    .app { max-width: 600px; margin: 0 auto; padding: 16px; padding-bottom: 100px; min-height: 100vh; }
+    h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+    h2 { font-size: 22px; font-weight: 600; margin-bottom: 12px; }
+    h3 { font-size: 17px; font-weight: 600; }
+    .muted { color: #444; font-size: 14px; }
+
+    /* CARD */
+    .card {
+      background: #0a0a0a;
+      border: none;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    /* BUTTONS */
+    button {
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 14px;
+      padding: 15px 20px;
+      cursor: pointer;
+      width: 100%;
+      transition: transform 0.1s, opacity 0.15s;
+      letter-spacing: -0.2px;
+    }
+    button:active { transform: scale(0.97); opacity: 0.85; }
+    .btn-primary {
+      background: #e8a500;
+      color: #0a0a0a;
+    }
+    .btn-secondary { background: #111; color: #888; border: 1px solid #1a1a1a; }
+    .btn-danger { background: transparent; color: #ef4444; border: 1px solid #2a1a1a; }
+    .btn-small { padding: 9px 14px; font-size: 14px; width: auto; border-radius: 10px; }
+
+    /* INPUTS */
+    input, textarea, select {
+      font-family: inherit;
+      font-size: 17px;
+      background: #0f0f0f;
+      color: #ffffff;
+      border: 1px solid #1a1a1a;
+      border-radius: 12px;
+      padding: 12px 14px;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus, textarea:focus { border-color: #e8a500; }
+    textarea { resize: none; min-height: 60px; }
+    label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; margin-top: 14px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+
+    .row { display: flex; gap: 8px; }
+    .row > * { flex: 1; }
+
+    /* NAV */
+    .nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: #0a0a0a;
+      border-top: 1px solid #181818;
+      display: flex;
+      padding: 8px;
+      padding-bottom: max(8px, env(safe-area-inset-bottom));
+      z-index: 100;
+    }
+    .nav button {
+      background: transparent;
+      color: #3a3a3a;
+      padding: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 10px;
+      border: none;
+      box-shadow: none;
+      letter-spacing: -0.1px;
+      line-height: 1;
+    }
+    .nav button.active { color: #e8a500; }
+    .nav button:active { background: #141414; transform: none; opacity: 1; }
+
+    /* MUUT SALIT */
+    .muut-row { display: flex; gap: 8px; margin-bottom: 0; }
+    .muut-row button { flex: 1; }
+
+    /* LIIKE ROWS */
+    .liike-row {
+      padding: 14px 0;
+      border-bottom: 1px solid #181818;
+    }
+    .liike-row:last-child { border-bottom: none; }
+    .liike-name { font-weight: 600; font-size: 16px; color: #e8e8e8; }
+    .liike-tavoite { color: #555; font-size: 13px; margin-top: 3px; }
+    .liike-viime { color: #3d3d3d; font-size: 13px; margin-top: 4px; font-variant-numeric: tabular-nums; }
+    .liike-viime .viime-val { color: #5a6a7a; }
+    .liike-input-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+    .liike-input-row input { flex: 1; max-width: 100px; text-align: center; font-size: 20px; font-weight: 700; padding: 10px 12px; }
+    .liike-input-row .kg-label { color: #444; font-size: 14px; white-space: nowrap; font-weight: 600; }
+
+    .empty { text-align: center; padding: 40px 20px; color: #444; }
+
+    /* BADGES */
+    .badge {
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .badge-push { color: #ffffff; }
+    .badge-pull { color: #ffffff; }
+    .badge-legs { color: #ffffff; }
+    .badge-juoksu { color: #4ade80; }
+    .badge-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+    .badge-dot-push { background: #6b9fff; }
+    .badge-dot-pull { background: #c084fc; }
+    .badge-dot-legs { background: #fb923c; }
+    .badge-dot-juoksu { background: #4ade80; }
+
+    /* HISTORIA */
+    .history-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #0f0f0f; }
+    .history-item:last-child { border-bottom: none; }
+    .history-clickable { cursor: pointer; transition: background 0.1s; margin: 0 -16px; padding: 14px 16px; border-bottom: 1px solid #0f0f0f; }
+    .history-clickable:last-child { border-bottom: none; }
+    .history-clickable:active { background: #0a0a0a; }
+    .history-date { color: #333; font-size: 13px; }
+
+    .liiketyyppi-tag { display: inline-block; padding: 6px 12px; border-radius: 8px; font-size: 14px; margin-right: 6px; margin-bottom: 6px; cursor: pointer; background: #141414; border: 1px solid #222; }
+    .liiketyyppi-tag.active { background: #6366f1; border-color: #6366f1; color: white; }
+    .delete-btn { background: transparent; color: #ef4444; padding: 4px 8px; font-size: 14px; width: auto; }
+
+    /* TOAST */
+    .toast {
+      position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+      background: #10b981; color: white; padding: 11px 22px; border-radius: 100px;
+      font-weight: 600; font-size: 15px; z-index: 200;
+      animation: toastIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 8px 32px rgba(16,185,129,0.35);
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translate(-50%, 16px) scale(0.92); }
+      to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    }
+
+    /* SECTION LABEL */
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #555;
+      margin-bottom: 12px;
+      margin-top: 4px;
+    }
+
+    /* TILASTOT */
+    .tab-row { display: flex; gap: 8px; margin-bottom: 20px; margin-top: 8px; }
+    .tab-btn { flex: 1; background: transparent; color: #333; border: 1px solid #161616; border-radius: 10px; padding: 10px 14px; font-size: 14px; font-weight: 600; width: auto; transition: all 0.15s; }
+    .tab-btn.aktiivinen { background: #1a1400; color: #e8a500; border-color: rgba(232,165,0,0.3); }
+    .tilasto-stats { display: flex; gap: 8px; margin: 16px 0; }
+    .tilasto-stat { flex: 1; background: #0a0a0a; border: none; border-radius: 10px; padding: 12px 8px; text-align: center; }
+    .tilasto-stat .ts-label { font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 5px; }
+    .tilasto-stat .ts-arvo { font-size: 22px; font-weight: 800; color: #f0f0f0; }
+    .tilasto-stat .ts-unit { font-size: 12px; color: #555; font-weight: 500; }
+  </style>
+</head>
+<body>
+  <div class="app" id="app"></div>
+  <nav class="nav" id="nav"></nav>
+
+<script>
+// ============================================================
+// DATA — Tallennetaan localStorageen
+// ============================================================
+
+const DEFAULT_TAVOITTEET = { salitViikossa: 0, kmViikossa: 0 };
+
+// Uusi rakenne: taulukko { nimi, aktiivinen, liikkeet[] }
+// Lenkki on erillinen, ei rotaatiossa
+const DEFAULT_SALIOHJELMAT = [
+  {
+    nimi: 'Push',
+    aktiivinen: true,
+    liikkeet: [
+      { nimi: 'Box jump', tavoite: '4 × 5 · Räjähtävä' },
+      { nimi: 'Penkki', tavoite: '4 × 5 · Pääliike, +2,5 kg progressio' },
+      { nimi: 'Pec deck', tavoite: '3 × 12-15' },
+      { nimi: 'Pystypunnerrus', tavoite: '3 × 6-8' },
+      { nimi: 'Dippi', tavoite: '3 × 8-10' },
+      { nimi: 'Kaapeliojentajat', tavoite: '3 × 12' },
+      { nimi: 'Sivunostot', tavoite: '3 × 12-15' },
+      { nimi: 'Ab wheel', tavoite: '3 × 8-10' },
+    ]
+  },
+  {
+    nimi: 'Pull',
+    aktiivinen: true,
+    liikkeet: [
+      { nimi: 'Broad jump', tavoite: '3 × 5 · Räjähtävä' },
+      { nimi: 'Maastaveto', tavoite: '4 × 4-5 · Pääliike, +5 kg progressio' },
+      { nimi: 'Tangosoutu', tavoite: '3 × 6-8' },
+      { nimi: 'Leuat', tavoite: '3 × max · Tavoite 15' },
+      { nimi: 'Face pull', tavoite: '3 × 15' },
+      { nimi: 'Hauiskääntö', tavoite: '3 × 10-12' },
+      { nimi: 'Vasarakääntö', tavoite: '3 × 10-12' },
+      { nimi: 'Hanging leg raise', tavoite: '3 × 10-12' },
+    ]
+  },
+  {
+    nimi: 'Legs',
+    aktiivinen: true,
+    liikkeet: [
+      { nimi: 'Hyppykyykky', tavoite: '3 × 3-5 · Räjähtävä, laatu ensin' },
+      { nimi: 'Takakyykky', tavoite: '4 × 5 · Pääliike, +2,5 kg progressio' },
+      { nimi: 'Bulgarian split squat', tavoite: '3 × 8/jalka' },
+      { nimi: 'Romanian maastaveto', tavoite: '3 × 8-10' },
+      { nimi: 'Leg curl', tavoite: '3 × 10-12' },
+      { nimi: 'Pohjekääntö', tavoite: '4 × 12-15' },
+      { nimi: 'Russian twist', tavoite: '3 × 12' },
+      { nimi: 'Sivuplankki', tavoite: '3 × 20-30 s/puoli' },
+    ]
+  }
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  view: 'home',
+  saliohjelmat: loadSaliohjelmat(),  // taulukko { nimi, aktiivinen, liikkeet[] }
+  treenit: loadTreenit(),
+  ennatykset: loadEnnatykset(),      // taulukko { pvm, nimi, kg }
+  tavoitteet: loadTavoitteet(),      // { salitViikossa, kmViikossa }
+  aktiivinenTreeni: null,
+  muokattavaIdx: null,   // saliohjelmat-indeksi muokkauksessa
+  katsottavaTreeniIdx: null,
+  historiaNakyma: 'treenit',  // 'treenit' | 'liikkeet'
+  tilastoLiike: null
+};
+
+function loadSaliohjelmat() {
+  // Uusi avain 'saliohjelmat' — taulukkomuoto
+  const saved = localStorage.getItem('saliohjelmat');
+  if (saved) {
+    try { return JSON.parse(saved); } catch(e) {}
+  }
+  // Migraatio vanhasta objektirakenteesta
+  const vanha = localStorage.getItem('ohjelmat');
+  if (vanha) {
+    try {
+      const obj = JSON.parse(vanha);
+      // Muodostetaan järjestetty taulukko (Lenkki jätetään pois)
+      const jarjestys = ['Push', 'Pull', 'Legs'];
+      const result = jarjestys
+        .filter(k => obj[k] && obj[k].liikkeet && obj[k].liikkeet.length > 0)
+        .map(k => ({ nimi: k, aktiivinen: true, liikkeet: obj[k].liikkeet }));
+      // Lisää mahdolliset muut (ei Lenkki)
+      Object.keys(obj).forEach(k => {
+        if (!jarjestys.includes(k) && k !== 'Lenkki' && k !== 'Pitkä lenkki') {
+          result.push({ nimi: k, aktiivinen: true, liikkeet: obj[k].liikkeet || [] });
+        }
+      });
+      return result;
+    } catch(e) {}
+  }
+  return JSON.parse(JSON.stringify(DEFAULT_SALIOHJELMAT));
+}
+
+function loadTreenit() {
+  const saved = localStorage.getItem('treenit');
+  if (!saved) return [];
+  const parsed = JSON.parse(saved);
+  parsed.forEach(t => {
+    if (t.tyyppi === 'Pitkä lenkki') t.tyyppi = 'Lenkki';
+  });
+  return parsed;
+}
+
+function loadEnnatykset() {
+  const saved = localStorage.getItem('ennatykset');
+  if (!saved) return [];
+  try { return JSON.parse(saved); } catch(e) { return []; }
+}
+
+function loadTavoitteet() {
+  const saved = localStorage.getItem('tavoitteet');
+  if (!saved) return { ...DEFAULT_TAVOITTEET };
+  try { return { ...DEFAULT_TAVOITTEET, ...JSON.parse(saved) }; } catch(e) { return { ...DEFAULT_TAVOITTEET }; }
+}
+
+function save() {
+  try {
+    localStorage.setItem('saliohjelmat', JSON.stringify(state.saliohjelmat));
+    localStorage.setItem('treenit', JSON.stringify(state.treenit));
+    localStorage.setItem('ennatykset', JSON.stringify(state.ennatykset));
+    localStorage.setItem('tavoitteet', JSON.stringify(state.tavoitteet));
+  } catch (e) {
+    alert('Tallennus epäonnistui: ' + e.message);
+  }
+}
+
+function saveAktiivinen() {
+  if (state.aktiivinenTreeni) {
+    localStorage.setItem('aktiivinenTreeni', JSON.stringify(state.aktiivinenTreeni));
+  } else {
+    localStorage.removeItem('aktiivinenTreeni');
+  }
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ============================================================
+// LOGIIKKA
+// ============================================================
+function aktiivisetSalit() {
+  return state.saliohjelmat.filter(o => o.aktiivinen);
+}
+
+function seuraavaSali() {
+  const kierto = aktiivisetSalit();
+  if (kierto.length === 0) return null;
+  const viimSali = [...state.treenit]
+    .reverse()
+    .find(t => kierto.some(o => o.nimi === t.tyyppi));
+  if (!viimSali) return kierto[0].nimi;
+  const idx = kierto.findIndex(o => o.nimi === viimSali.tyyppi);
+  return kierto[(idx + 1) % kierto.length].nimi;
+}
+
+function haeOhjelma(nimi) {
+  return state.saliohjelmat.find(o => o.nimi === nimi) || null;
+}
+
+function viimeSarjat(liikeNimi) {
+  for (let i = state.treenit.length - 1; i >= 0; i--) {
+    const t = state.treenit[i];
+    if (t.liikkeet && t.liikkeet[liikeNimi]) {
+      return { sarjat: t.liikkeet[liikeNimi], pvm: t.pvm };
+    }
+  }
+  return null;
+}
+
+function onJuoksu(tyyppi) {
+  return tyyppi === 'Lenkki';
+}
+
+const ENNÄTYSLIIKKEET = ['Takakyykky', 'Penkki', 'Maastaveto'];
+
+function onkoEnnatyksetTallaKuulla() {
+  const nyt = new Date();
+  return state.ennatykset.some(e => {
+    const d = new Date(e.pvm);
+    return d.getFullYear() === nyt.getFullYear() && d.getMonth() === nyt.getMonth();
+  });
+}
+
+function viimeisinEnnätys(nimi) {
+  for (let i = state.ennatykset.length - 1; i >= 0; i--) {
+    if (state.ennatykset[i].nimi === nimi) return state.ennatykset[i];
+  }
+  return null;
+}
+
+function getLiikeHistoria(nimi) {
+  return state.treenit
+    .filter(t => t.liikkeet && t.liikkeet[nimi] && parseFloat(t.liikkeet[nimi]) > 0)
+    .map(t => ({ pvm: t.pvm, kg: parseFloat(t.liikkeet[nimi]) }))
+    .sort((a, b) => new Date(a.pvm) - new Date(b.pvm));
+}
+
+function getLiikkeetJoillaTilasto() {
+  const laskuri = {};
+  state.treenit.forEach(t => {
+    if (!t.liikkeet) return;
+    Object.entries(t.liikkeet).forEach(([nimi, arvo]) => {
+      if (arvo && parseFloat(arvo) > 0) {
+        laskuri[nimi] = (laskuri[nimi] || 0) + 1;
+      }
+    });
+  });
+  const kelpaavatNimet = new Set(Object.keys(laskuri).filter(n => laskuri[n] >= 5));
+  if (kelpaavatNimet.size === 0) return [];
+  const result = [];
+  const käsitelty = new Set();
+  state.saliohjelmat.forEach(ohjelma => {
+    const ryhmänLiikkeet = ohjelma.liikkeet
+      .filter(l => kelpaavatNimet.has(l.nimi))
+      .map(l => ({ nimi: l.nimi, lkm: laskuri[l.nimi] }));
+    ryhmänLiikkeet.forEach(l => käsitelty.add(l.nimi));
+    if (ryhmänLiikkeet.length > 0) result.push({ ryhmäNimi: ohjelma.nimi, liikkeet: ryhmänLiikkeet });
+  });
+  const muut = [...kelpaavatNimet]
+    .filter(n => !käsitelty.has(n))
+    .map(n => ({ nimi: n, lkm: laskuri[n] }));
+  if (muut.length > 0) result.push({ ryhmäNimi: 'Muut', liikkeet: muut });
+  return result;
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function render() {
+  const app = document.getElementById('app');
+  const nav = document.getElementById('nav');
+
+  if (state.view === 'home') app.innerHTML = renderHome();
+  else if (state.view === 'treeni') app.innerHTML = renderTreeni();
+  else if (state.view === 'historia') app.innerHTML = renderHistoria();
+  else if (state.view === 'asetukset') app.innerHTML = renderAsetukset();
+  else if (state.view === 'muokkaaOhjelma') app.innerHTML = renderMuokkaaOhjelma();
+  else if (state.view === 'treeniNakyma') app.innerHTML = renderTreeniNakyma();
+  else if (state.view === 'liikeTilasto') app.innerHTML = renderLiikeTilasto();
+  else if (state.view === 'ennatysLomake') app.innerHTML = renderEnnatysLomake();
+
+  const navActive = v => (state.view === v || (v === 'home' && state.view === 'ennatysLomake') || (v === 'historia' && (state.view === 'treeniNakyma' || state.view === 'liikeTilasto')) || (v === 'asetukset' && state.view === 'muokkaaOhjelma')) ? 'active' : '';
+  nav.innerHTML = `
+    <button onclick="setView('home')" class="${navActive('home')}" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 8px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.09 13.5H10L9 22l9.91-11.5H14L13 2z"/></svg>
+      <span style="font-size:10px;letter-spacing:0.5px">Treeni</span>
+    </button>
+    <button onclick="setView('historia')" class="${navActive('historia')}" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 8px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="8" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="8" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.2" fill="currentColor" stroke="none"/></svg>
+      <span style="font-size:10px;letter-spacing:0.5px">Historia</span>
+    </button>
+    <button onclick="setView('asetukset')" class="${navActive('asetukset')}" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 8px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="14" cy="6" r="2.5" fill="#000" stroke="currentColor" stroke-width="1.8"/><circle cx="8" cy="12" r="2.5" fill="#000" stroke="currentColor" stroke-width="1.8"/><circle cx="16" cy="18" r="2.5" fill="#000" stroke="currentColor" stroke-width="1.8"/></svg>
+      <span style="font-size:10px;letter-spacing:0.5px">Asetukset</span>
+    </button>
+  `;
+}
+
+function renderViikkoStat(arvo, tavoite, label) {
+  const hasGoal = tavoite > 0;
+  const saavutettu = hasGoal && arvo >= tavoite;
+  const pct = hasGoal ? Math.min(100, (arvo / tavoite) * 100) : 0;
+  const vari = saavutettu ? '#4ade80' : '#e8a500';
+  const naytettava = (!hasGoal && arvo === 0) ? '—' : arvo;
+  const tekstiVari = (!hasGoal && arvo === 0) ? '#222' : '#fff';
+  return `
+    <div>
+      <div style="font-size:32px;font-weight:800;letter-spacing:-1.5px;line-height:1;color:${tekstiVari}">
+        ${naytettava}${hasGoal ? `<span style="font-size:17px;font-weight:600;color:${saavutettu ? '#4ade80' : '#333'}"> / ${tavoite}</span>` : ''}
+      </div>
+      <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-top:5px">${label}</div>
+      ${hasGoal ? `<div style="margin-top:8px;height:2px;background:#181818;border-radius:2px;overflow:hidden;width:80px"><div style="height:100%;width:${pct}%;background:${vari};border-radius:2px"></div></div>` : ''}
+    </div>
+  `;
+}
+
+function renderPalautusToggle(t) {
+  const saunaAktiivinen = t.sauna;
+  const kylmäAktiivinen = t.kylmaallas;
+  return `
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px">Palautuminen</div>
+      <div style="display:flex;gap:8px">
+        <button onclick="togglePalautus('sauna')" class="btn-small" style="flex:1;background:${saunaAktiivinen ? '#1a1400' : '#111'};color:${saunaAktiivinen ? '#e8a500' : '#444'};border:1px solid ${saunaAktiivinen ? 'rgba(232,165,0,0.35)' : '#1c1c1c'}">Sauna</button>
+        <button onclick="togglePalautus('kylmaallas')" class="btn-small" style="flex:1;background:${kylmäAktiivinen ? '#001828' : '#111'};color:${kylmäAktiivinen ? '#60c8ff' : '#444'};border:1px solid ${kylmäAktiivinen ? 'rgba(96,200,255,0.25)' : '#1c1c1c'}">Kylmäallas</button>
+      </div>
+    </div>
+  `;
+}
+
+function viikkoStats() {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const diff = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
+  const viikkoAlku = new Date(now);
+  viikkoAlku.setDate(now.getDate() - diff);
+  viikkoAlku.setHours(0, 0, 0, 0);
+
+  let salit = 0;
+  let km = 0;
+  state.treenit.forEach(t => {
+    const pvm = new Date(t.pvm);
+    if (pvm >= viikkoAlku) {
+      if (!onJuoksu(t.tyyppi)) salit++;
+      if (t.matka) km += parseFloat(t.matka) || 0;
+    }
+  });
+  return { salit, km: Math.round(km * 10) / 10 };
+}
+
+function paivaTervehys() {
+  const h = new Date().getHours();
+  if (h < 11) return 'Huomenta';
+  if (h < 17) return 'Moi';
+  return 'Iltaa';
+}
+
+function renderHome() {
+  const seuraavaS = seuraavaSali();
+  const lastTreenit = [...state.treenit].reverse().slice(0, 4);
+  const muutSalit = aktiivisetSalit().filter(o => o.nimi !== seuraavaS).map(o => o.nimi);
+  const { salit, km } = viikkoStats();
+
+  const allekirjoitus = new Date().toLocaleDateString('fi-FI', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  return `
+    <div style="padding-top:12px">
+      <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:40px">${paivaTervehys()}, Joonas &nbsp;·&nbsp; ${allekirjoitus}</div>
+
+      ${seuraavaS ? `
+        <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px">Seuraava</div>
+        <div style="font-size:60px;font-weight:800;letter-spacing:-3px;line-height:1;color:#fff;margin-bottom:24px">${seuraavaS}</div>
+        <button class="btn-primary" onclick="aloitaTreeni('${seuraavaS}')" style="margin-bottom:16px">Aloita →</button>
+      ` : `<div style="color:#333;padding:24px 0">Ei aktiivisia ohjelmia. Lisää asetuksista.</div>`}
+
+      <div style="display:flex;gap:8px;margin-bottom:40px">
+        ${muutSalit.map(t => `<button class="btn-secondary btn-small" onclick="aloitaTreeni('${escapeHtml(t)}')">${escapeHtml(t)}</button>`).join('')}
+        <button class="btn-secondary btn-small" onclick="aloitaTreeni('Lenkki')">Lenkki</button>
+      </div>
+
+      <div style="border-top:1px solid #0f0f0f;padding-top:20px;margin-bottom:32px">
+        <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:14px">Tällä viikolla</div>
+        <div style="display:flex;gap:32px">
+          ${renderViikkoStat(salit, state.tavoitteet.salitViikossa, 'Salit')}
+          ${renderViikkoStat(km, state.tavoitteet.kmViikossa, 'Km')}
+        </div>
+      </div>
+
+      ${!onkoEnnatyksetTallaKuulla() ? `
+      <div style="border-top:1px solid #0f0f0f;padding:20px 0;margin-bottom:32px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:11px;color:#a88000;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:4px">Kuukauden testi</div>
+            <div style="font-size:15px;color:#555">Kyykky · Penkki · Maastaveto</div>
+          </div>
+          <button class="btn-secondary btn-small" onclick="setView('ennatysLomake')" style="color:#e8a500;border-color:#2a1e00">Syötä →</button>
+        </div>
+      </div>` : ''}
+
+      ${lastTreenit.length > 0 ? `
+        <div style="border-top:1px solid #0f0f0f;padding-top:20px">
+          <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:4px">Viimeiset</div>
+          ${lastTreenit.map(t => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid #0a0a0a">
+              <div style="display:flex;align-items:center;gap:0">
+                <span class="badge-dot badge-dot-${badgeClass(t.tyyppi)}"></span>
+                <span style="font-weight:600;font-size:15px">${escapeHtml(t.tyyppi)}</span>
+                ${t.matka ? `<span style="color:#333;font-size:13px;margin-left:8px">${t.matka} km</span>` : ''}
+              </div>
+              <span style="color:#333;font-size:13px">${formatPvm(t.pvm)}</span>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function badgeClass(tyyppi) {
+  if (tyyppi === 'Push') return 'push';
+  if (tyyppi === 'Pull') return 'pull';
+  if (tyyppi === 'Legs') return 'legs';
+  if (onJuoksu(tyyppi)) return 'juoksu';
+  return 'push'; // fallback uusille ohjelmille
+}
+
+function formatPvm(pvm) {
+  const d = new Date(pvm);
+  const now = new Date();
+  const erotus = Math.floor((now - d) / (1000 * 60 * 60 * 24));
+  if (erotus === 0) return 'Tänään';
+  if (erotus === 1) return 'Eilen';
+  if (erotus < 7) return `${erotus} pv sitten`;
+  return d.toLocaleDateString('fi-FI', { day: 'numeric', month: 'numeric' });
+}
+
+function renderTreeni() {
+  const t = state.aktiivinenTreeni;
+  const ohjelma = haeOhjelma(t.tyyppi);
+
+  if (onJuoksu(t.tyyppi)) {
+    return `
+      <button class="btn-secondary btn-small" onclick="peruutaTreeni()" style="margin-bottom: 12px;">← Takaisin</button>
+      <h1>${t.tyyppi}</h1>
+      <p class="muted">${formatPvm(t.alkuaika)}</p>
+
+      <div style="margin-top:16px;margin-bottom:4px">
+        <button onclick="togglePalautus('lampottelu')" class="btn-small" style="width:auto;background:${t.lampottelu ? '#001a0d' : '#111'};color:${t.lampottelu ? '#4ade80' : '#444'};border:1px solid ${t.lampottelu ? 'rgba(74,222,128,0.25)' : '#1c1c1c'}">Lämmittely tehty</button>
+      </div>
+
+      <div class="card" style="margin-top: 16px;">
+        <label>Matka (km)</label>
+        <input type="number" inputmode="decimal" id="matkaInput" value="${t.matka || ''}" placeholder="esim. 10" oninput="paivitaJuoksu()">
+
+        <label>Kesto (esim. 1:05 tai 65)</label>
+        <input type="text" id="kestoInput" value="${t.kesto || ''}" placeholder="1:05" oninput="paivitaJuoksu()">
+
+        <label>Muistiinpanot</label>
+        <textarea id="muistiinpanoInput" oninput="paivitaJuoksu()" placeholder="Vapaa kommentti">${t.muistiinpano || ''}</textarea>
+      </div>
+
+      ${renderPalautusToggle(t)}
+
+      <button class="btn-primary" onclick="tallennaTreeni()">Tallenna treeni</button>
+      <button class="btn-danger" onclick="peruutaTreeni()" style="margin-top: 8px;">Peruuta</button>
+    `;
+  }
+
+  return `
+    <button class="btn-secondary btn-small" onclick="peruutaTreeni()" style="margin-bottom: 12px;">← Takaisin</button>
+    <h1>${t.tyyppi}-treeni</h1>
+    <p class="muted">${formatPvm(t.alkuaika)}</p>
+
+    <div style="margin-top:16px;margin-bottom:4px">
+      <button onclick="togglePalautus('lampottelu')" class="btn-small" style="width:auto;background:${t.lampottelu ? '#001a0d' : '#111'};color:${t.lampottelu ? '#4ade80' : '#444'};border:1px solid ${t.lampottelu ? 'rgba(74,222,128,0.25)' : '#1c1c1c'}">Lämmittely tehty</button>
+    </div>
+
+    <div class="card" style="margin-top: 16px;">
+      ${ohjelma.liikkeet.map(l => {
+        const viim = viimeSarjat(l.nimi);
+        const arvo = t.liikkeet[l.nimi] || '';
+        return `
+          <div class="liike-row">
+            <div class="liike-name">${escapeHtml(l.nimi)}</div>
+            <div class="liike-tavoite">${escapeHtml(l.tavoite)}</div>
+            ${viim ? `<div class="liike-viime">Viime: ${escapeHtml(viim.sarjat)}${isNaN(parseFloat(viim.sarjat)) ? '' : ' kg'} <span style="color:#444">(${formatPvm(viim.pvm)})</span></div>` : '<div class="liike-viime" style="color:#444">Ei aiempaa</div>'}
+            <div class="liike-input-row">
+              <input type="number" inputmode="decimal" value="${escapeHtml(arvo)}" placeholder="—" data-liike="${escapeHtml(l.nimi)}" oninput="paivitaLiike(this.dataset.liike, this.value)">
+              <span class="kg-label">kg</span>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+
+    <div class="card">
+      <label>Muistiinpanot</label>
+      <textarea id="muistiinpanoInput" oninput="paivitaMuistiinpano()" placeholder="Fiilis, kipuilut, jne.">${t.muistiinpano || ''}</textarea>
+    </div>
+
+    ${renderPalautusToggle(t)}
+
+    <button class="btn-primary" onclick="tallennaTreeni()">Tallenna treeni</button>
+    <button class="btn-danger" onclick="peruutaTreeni()" style="margin-top: 8px;">Peruuta</button>
+  `;
+}
+
+function renderHistoria() {
+  const nakyma = state.historiaNakyma || 'treenit';
+  const tabs = `
+    <div class="tab-row">
+      <button class="tab-btn ${nakyma === 'treenit' ? 'aktiivinen' : ''}" onclick="setHistoriaNakyma('treenit')">Treenit</button>
+      <button class="tab-btn ${nakyma === 'liikkeet' ? 'aktiivinen' : ''}" onclick="setHistoriaNakyma('liikkeet')">Liikkeet</button>
+    </div>
+  `;
+
+  if (nakyma === 'liikkeet') {
+    return `<h1>Historia</h1>${tabs}${renderLiikkeetLista()}`;
+  }
+
+  if (state.treenit.length === 0) {
+    return `<h1>Historia</h1>${tabs}<div class="empty">Ei vielä treenejä.</div>`;
+  }
+  return `
+    <h1>Historia</h1>
+    ${tabs}
+    <div style="margin-top:8px">
+      ${[...state.treenit].reverse().map((t, idx) => {
+        const realIdx = state.treenit.length - 1 - idx;
+        return `
+          <div class="history-clickable" onclick="avaaTreeni(${realIdx})" style="display:flex;justify-content:space-between;align-items:center">
+            <div style="flex:1">
+              <div style="display:flex;align-items:center">
+                <span class="badge-dot badge-dot-${badgeClass(t.tyyppi)}"></span>
+                <span style="font-weight:600;font-size:15px">${escapeHtml(t.tyyppi)}</span>
+                ${t.matka ? `<span style="color:#333;font-size:13px;margin-left:8px">${escapeHtml(t.matka)} km</span>` : ''}
+              </div>
+              ${t.liikkeet && Object.keys(t.liikkeet).filter(k => t.liikkeet[k]).length > 0 ? `<div style="color:#2a2a2a;font-size:12px;margin-top:3px;margin-left:15px">${Object.keys(t.liikkeet).filter(k => t.liikkeet[k]).length} liikettä</div>` : ''}
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="history-date">${formatPvm(t.pvm)}</span>
+              <span style="color:#222;font-size:16px">›</span>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderLiikkeetLista() {
+  const ryhmät = getLiikkeetJoillaTilasto();
+  if (ryhmät.length === 0) {
+    return `<div class="empty" style="padding: 60px 20px;">
+      <div style="font-size: 36px; margin-bottom: 14px;">📈</div>
+      <div style="color: #444; font-size: 15px; line-height: 1.6;">Tee sama liike vähintään 5 kertaa,<br>niin kehitys näkyy täällä.</div>
+    </div>`;
+  }
+  return ryhmät.map(ryhmä => `
+    <div class="section-label" style="margin-top: 16px;">${escapeHtml(ryhmä.ryhmäNimi)}</div>
+    <div class="card">
+      ${ryhmä.liikkeet.map(l => {
+        const historia = getLiikeHistoria(l.nimi);
+        const viimeisin = historia.length > 0 ? historia[historia.length - 1].kg : null;
+        const pr = historia.length > 0 ? Math.max(...historia.map(d => d.kg)) : null;
+        return `
+          <div class="history-item history-clickable" onclick="avaaLiikeTilasto('${escapeHtml(l.nimi).replace(/'/g, "\\'")}')">
+            <div style="flex: 1;">
+              <div class="liike-name">${escapeHtml(l.nimi)}</div>
+              <div class="muted" style="margin-top: 3px;">${l.lkm} kertaa</div>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+              ${viimeisin !== null ? `<div style="font-size: 15px; font-weight: 700; color: #e8e8e8;">${viimeisin} kg</div>` : ''}
+              <span style="color: #555; font-size: 18px;">›</span>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `).join('');
+}
+
+function renderLiikeTilasto() {
+  const nimi = state.tilastoLiike;
+  const historia = nimi ? getLiikeHistoria(nimi) : [];
+  if (!nimi || historia.length === 0) {
+    return `<button class="btn-secondary btn-small" onclick="takaisinLiikkeisiin()" style="margin-bottom:12px">← Liikkeet</button>
+      <div class="empty">Ei dataa</div>`;
+  }
+  const kgs = historia.map(d => d.kg);
+  const pr = Math.max(...kgs);
+  const viimeisin = historia[historia.length - 1].kg;
+  const ensimmainen = historia[0].kg;
+  const muutos = Math.round((viimeisin - ensimmainen) * 10) / 10;
+  const tavoite = state.saliohjelmat.flatMap(o => o.liikkeet).find(l => l.nimi === nimi)?.tavoite;
+  const onEnnätysliike = ENNÄTYSLIIKKEET.includes(nimi);
+  const liikkeenEnnatykset = onEnnätysliike
+    ? state.ennatykset.filter(e => e.nimi === nimi).slice().reverse()
+    : [];
+  return `
+    <button class="btn-secondary btn-small" onclick="takaisinLiikkeisiin()" style="margin-bottom: 12px;">← Liikkeet</button>
+    <h1>${escapeHtml(nimi)}</h1>
+    ${tavoite ? `<div class="muted" style="margin-bottom: 4px;">Ohjelma: ${escapeHtml(tavoite)}</div>` : ''}
+    <div class="tilasto-stats">
+      <div class="tilasto-stat">
+        <div class="ts-label">PR</div>
+        <div class="ts-arvo">${pr}<span class="ts-unit"> kg</span></div>
+      </div>
+      <div class="tilasto-stat">
+        <div class="ts-label">Viimeisin</div>
+        <div class="ts-arvo">${viimeisin}<span class="ts-unit"> kg</span></div>
+      </div>
+      <div class="tilasto-stat">
+        <div class="ts-label">Yhteensä</div>
+        <div class="ts-arvo">${historia.length}<span class="ts-unit"> krt</span></div>
+      </div>
+    </div>
+    <div class="card" style="padding: 16px 10px;">
+      ${renderSvgKaavio(historia, pr)}
+    </div>
+    ${muutos !== 0 ? `
+    <div style="text-align: center; color: ${muutos > 0 ? '#4ade80' : '#f87171'}; font-size: 14px; font-weight: 600; margin: 12px 0 16px;">
+      ${muutos > 0 ? '▲' : '▼'} ${Math.abs(muutos)} kg ensimmäisestä kerrasta
+    </div>` : ''}
+    ${liikkeenEnnatykset.length > 0 ? `
+    <div class="section-label" style="margin-top: 8px; color: #a88000;">Ennätykset (1RM)</div>
+    <div class="card" style="border-color: #2a2000;">
+      ${liikkeenEnnatykset.map((e, i) => `
+        <div class="history-item">
+          <div style="color: #888; font-size: 14px;">${new Date(e.pvm).toLocaleDateString('fi-FI', { day: 'numeric', month: 'numeric', year: 'numeric' })}</div>
+          <div style="font-weight: 700; color: ${i === 0 ? '#f0e060' : '#a88000'};">${e.kg} kg${i === 0 ? ' ★' : ''}</div>
+        </div>
+      `).join('')}
+    </div>` : ''}
+    <div class="section-label" style="margin-top: 8px;">Kaikki merkinnät</div>
+    <div class="card">
+      ${[...historia].reverse().map(d => `
+        <div class="history-item">
+          <div style="color: #888; font-size: 14px;">${new Date(d.pvm).toLocaleDateString('fi-FI', { day: 'numeric', month: 'numeric', year: 'numeric' })}</div>
+          <div style="font-weight: 700; color: ${d.kg === pr ? '#e8a500' : '#e8e8e8'};">${d.kg} kg${d.kg === pr ? ' ★' : ''}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderSvgKaavio(data, prKg) {
+  if (data.length === 1) {
+    return `<div style="text-align:center;padding:32px 0">
+      <div style="font-size:36px;font-weight:800;color:#6366f1">${data[0].kg} kg</div>
+      <div class="muted" style="margin-top:8px">Yksi merkintä — lisää treenejä kehityskäyrää varten</div>
+    </div>`;
+  }
+  const ml = 42, mr = 12, mt = 14, mb = 28;
+  const W = 400, H = 200;
+  const cw = W - ml - mr;
+  const ch = H - mt - mb;
+  const kgs = data.map(d => d.kg);
+  const minKg = Math.min(...kgs);
+  const maxKg = Math.max(...kgs);
+  const range = maxKg - minKg;
+  const pad = range > 0 ? range * 0.2 : 5;
+  const yMin = Math.max(0, minKg - pad);
+  const yMax = maxKg + pad;
+  const yRange = yMax - yMin;
+  const toX = i => ml + (i / (data.length - 1)) * cw;
+  const toY = kg => mt + ch - ((kg - yMin) / yRange) * ch;
+  const gridSteps = 4;
+  const gridLines = Array.from({ length: gridSteps + 1 }, (_, i) => {
+    const kg = yMin + (i / gridSteps) * yRange;
+    return { y: toY(kg), label: Math.round(kg * 2) / 2 };
+  });
+  const pts = data.map((d, i) => ({ x: toX(i), y: toY(d.kg), kg: d.kg, pvm: d.pvm }));
+  const lineStr = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const areaPath = `M${pts[0].x.toFixed(1)},${(mt + ch).toFixed(1)} ` +
+    pts.map(p => `L${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') +
+    ` L${pts[pts.length - 1].x.toFixed(1)},${(mt + ch).toFixed(1)} Z`;
+  const maxLabels = Math.min(6, data.length);
+  const xIdxs = data.length <= maxLabels
+    ? data.map((_, i) => i)
+    : Array.from({ length: maxLabels }, (_, i) => Math.round(i * (data.length - 1) / (maxLabels - 1)));
+  const fmtD = pvmStr => { const d = new Date(pvmStr); return `${d.getDate()}.${d.getMonth() + 1}.`; };
+  return `
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
+      <defs>
+        <linearGradient id="tilastoGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#e8a500" stop-opacity="0.4"/>
+          <stop offset="100%" stop-color="#e8a500" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      ${gridLines.map(g => `
+        <line x1="${ml}" y1="${g.y.toFixed(1)}" x2="${W - mr}" y2="${g.y.toFixed(1)}" stroke="#1c1c1c" stroke-width="1"/>
+        <text x="${ml - 5}" y="${(g.y + 4).toFixed(1)}" fill="#3a3a3a" font-size="10" text-anchor="end" font-family="-apple-system,sans-serif">${g.label}</text>
+      `).join('')}
+      <path d="${areaPath}" fill="url(#tilastoGrad)"/>
+      <polyline points="${lineStr}" fill="none" stroke="#e8a500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      ${pts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.kg === prKg ? 5 : 3.5}" fill="${p.kg === prKg ? '#ffd700' : '#e8a500'}" stroke="#0d0d0d" stroke-width="1.5"/>`).join('')}
+      ${xIdxs.map(i => `<text x="${pts[i].x.toFixed(1)}" y="${(H - 5).toFixed(1)}" fill="#3a3a3a" font-size="10" text-anchor="middle" font-family="-apple-system,sans-serif">${fmtD(data[i].pvm)}</text>`).join('')}
+    </svg>
+  `;
+}
+
+function renderEnnatysLomake() {
+  const nyt = new Date();
+  const kuukausi = nyt.toLocaleDateString('fi-FI', { month: 'long', year: 'numeric' });
+  return `
+    <button class="btn-secondary btn-small" onclick="setView('home')" style="margin-bottom: 12px;">← Takaisin</button>
+    <h1>Kuukauden ennätykset</h1>
+    <p class="muted" style="margin-bottom: 20px;">${kuukausi} — syötä tämän kuukauden 1RM-testitulokset.</p>
+    <div class="card">
+      ${ENNÄTYSLIIKKEET.map((nimi, idx) => {
+        const viimeisin = viimeisinEnnätys(nimi);
+        return `
+          <div class="liike-row">
+            <div class="liike-name">${escapeHtml(nimi)}</div>
+            ${viimeisin ? `<div class="liike-viime">Edellinen: <span class="viime-val">${viimeisin.kg} kg</span> (${new Date(viimeisin.pvm).toLocaleDateString('fi-FI', { month: 'numeric', year: 'numeric' })})</div>` : '<div class="liike-viime" style="color:#444">Ei aiempaa</div>'}
+            <div class="liike-input-row">
+              <input type="number" inputmode="decimal" id="ennätys${idx}" placeholder="—" ${viimeisin ? `value="${viimeisin.kg}"` : ''}>
+              <span class="kg-label">kg</span>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+    <button class="btn-primary" onclick="tallennaEnnatykset()">Tallenna ennätykset</button>
+    <button class="btn-secondary" onclick="setView('home')" style="margin-top: 8px;">Peruuta</button>
+  `;
+}
+
+function renderTreeniNakyma() {
+  const t = state.treenit[state.katsottavaTreeniIdx];
+  if (!t) return `<h1>Treeniä ei löytynyt</h1><button class="btn-secondary" onclick="setView('historia')">Takaisin</button>`;
+
+  const liikkeetMerkitty = t.liikkeet ? Object.keys(t.liikkeet).filter(k => t.liikkeet[k]) : [];
+
+  return `
+    <button class="btn-secondary btn-small" onclick="setView('historia')" style="margin-bottom: 12px;">← Historia</button>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <span class="badge-dot badge-dot-${badgeClass(t.tyyppi)}"></span>
+      <h1 style="margin-bottom:0">${escapeHtml(t.tyyppi)}</h1>
+    </div>
+    <p class="muted" style="margin-top: 4px;">${formatPvm(t.pvm)} · ${new Date(t.pvm).toLocaleDateString('fi-FI', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+
+    ${onJuoksu(t.tyyppi) ? `
+      <div class="card" style="margin-top: 20px;">
+        ${t.matka ? `<div style="margin-bottom: 8px;"><span class="muted">Matka:</span> <strong>${escapeHtml(t.matka)} km</strong></div>` : ''}
+        ${t.kesto ? `<div style="margin-bottom: 8px;"><span class="muted">Kesto:</span> <strong>${escapeHtml(t.kesto)}</strong></div>` : ''}
+        ${!t.matka && !t.kesto ? '<div class="muted">Ei merkintöjä</div>' : ''}
+      </div>
+    ` : `
+      <div class="card" style="margin-top: 20px;">
+        ${liikkeetMerkitty.length === 0 ? '<div class="muted">Ei liikkeitä merkitty</div>' : liikkeetMerkitty.map(liikenimi => `
+          <div class="liike-row">
+            <div class="liike-name">${escapeHtml(liikenimi)}</div>
+            <div class="liike-viime" style="color: #aaa; margin-top: 6px;">${escapeHtml(t.liikkeet[liikenimi])}${!isNaN(parseFloat(t.liikkeet[liikenimi])) && t.liikkeet[liikenimi] !== '' ? ' kg' : ''}</div>
+          </div>
+        `).join('')}
+      </div>
+    `}
+
+    ${t.muistiinpano ? `
+      <div class="card">
+        <label style="margin-top: 0;">Muistiinpanot</label>
+        <div style="white-space: pre-wrap;">${escapeHtml(t.muistiinpano)}</div>
+      </div>
+    ` : ''}
+
+    ${(t.lampottelu || t.sauna || t.kylmaallas) ? `
+      <div style="display:flex;gap:8px;margin-top:4px;margin-bottom:4px;flex-wrap:wrap">
+        ${t.lampottelu ? `<span style="font-size:12px;color:#4ade80;background:#001a0d;padding:4px 12px;border-radius:20px;border:1px solid rgba(74,222,128,0.2);font-weight:600">Lämmittely</span>` : ''}
+        ${t.sauna ? `<span style="font-size:12px;color:#e8a500;background:#1a1400;padding:4px 12px;border-radius:20px;border:1px solid rgba(232,165,0,0.2);font-weight:600">Sauna</span>` : ''}
+        ${t.kylmaallas ? `<span style="font-size:12px;color:#60c8ff;background:#001828;padding:4px 12px;border-radius:20px;border:1px solid rgba(96,200,255,0.2);font-weight:600">Kylmäallas</span>` : ''}
+      </div>
+    ` : ''}
+
+    <button class="btn-danger" onclick="poistaTreeni(${state.katsottavaTreeniIdx}); setView('historia');" style="margin-top: 12px;">Poista treeni</button>
+  `;
+}
+
+function renderAsetukset() {
+  const ohjelmat = state.saliohjelmat;
+  return `
+    <h1>Asetukset</h1>
+
+    <div class="section-label" style="margin-top:8px">Saliohjelmat</div>
+    <div class="card">
+      <p class="muted" style="margin-bottom:14px">Järjestys = rotaatio. Epäaktiiviset ohjelmat jätetään kierron ulkopuolelle.</p>
+      ${ohjelmat.map((o, idx) => `
+        <div class="history-item" style="gap:10px">
+          <div style="display:flex;flex-direction:column;gap:4px;min-width:36px;align-items:center">
+            <button class="btn-secondary btn-small" style="padding:4px 8px;font-size:16px;line-height:1" onclick="siirraOhjelma(${idx},-1)" ${idx === 0 ? 'disabled style="opacity:0.2"' : ''}>↑</button>
+            <button class="btn-secondary btn-small" style="padding:4px 8px;font-size:16px;line-height:1" onclick="siirraOhjelma(${idx},1)" ${idx === ohjelmat.length-1 ? 'disabled style="opacity:0.2"' : ''}>↓</button>
+          </div>
+          <div style="flex:1">
+            <div class="liike-name" style="color:${o.aktiivinen ? '#e8e8e8' : '#444'}">${escapeHtml(o.nimi)}</div>
+            <div class="muted">${o.liikkeet.length} liikettä${o.aktiivinen ? '' : ' · <span style="color:#555">epäaktiivinen</span>'}</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn-secondary btn-small" onclick="toggleAktiivinen(${idx})" style="min-width:70px;${o.aktiivinen ? '' : 'color:#555'}">
+              ${o.aktiivinen ? 'Aktiivinen' : 'Pois'}
+            </button>
+            <button class="btn-secondary btn-small" onclick="muokkaaOhjelmaIdx(${idx})">Muokkaa</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <button class="btn-secondary" onclick="uusiOhjelma()" style="margin-bottom:12px">+ Uusi ohjelmatyyppi</button>
+
+    <div class="section-label" style="margin-top:20px">Viikkotavoitteet</div>
+    <div class="card">
+      <p class="muted" style="margin-bottom:14px">Aseta 0 jos et halua tavoitetta näkyviin.</p>
+      <div class="row">
+        <div>
+          <label style="margin-top:0">Salit / viikko</label>
+          <input type="number" inputmode="numeric" min="0" max="14" value="${state.tavoitteet.salitViikossa || ''}" placeholder="0" oninput="paivitaTavoite('salitViikossa', this.value)">
+        </div>
+        <div>
+          <label style="margin-top:0">Km / viikko</label>
+          <input type="number" inputmode="decimal" min="0" value="${state.tavoitteet.kmViikossa || ''}" placeholder="0" oninput="paivitaTavoite('kmViikossa', this.value)">
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:8px">
+      <h3 style="margin-bottom: 8px;">Data</h3>
+      <p class="muted" style="margin-bottom: 12px;">Treenit tallentuvat selaimen muistiin tällä laitteella.</p>
+      <button class="btn-danger" onclick="tyhjennaData()">Tyhjennä kaikki data</button>
+    </div>
+  `;
+}
+
+function renderMuokkaaOhjelma() {
+  const ohjelma = state.saliohjelmat[state.muokattavaIdx];
+  if (!ohjelma) return `<button class="btn-secondary btn-small" onclick="setView('asetukset')">← Takaisin</button>`;
+  return `
+    <button class="btn-secondary btn-small" onclick="setView('asetukset')" style="margin-bottom: 12px;">← Takaisin</button>
+    <h1>Muokkaa: ${escapeHtml(ohjelma.nimi)}</h1>
+
+    <div class="card" style="margin-top:12px;margin-bottom:12px">
+      <label style="margin-top:0">Ohjelman nimi</label>
+      <input type="text" value="${escapeHtml(ohjelma.nimi)}" oninput="paivitaOhjelmanNimi(this.value)" placeholder="esim. Yläkroppa">
+    </div>
+
+    <div class="section-label">Liikkeet</div>
+    <div class="card">
+      ${ohjelma.liikkeet.length === 0 ? '<div class="muted">Ei liikkeitä vielä.</div>' : ''}
+      ${ohjelma.liikkeet.map((l, idx) => `
+        <div class="liike-row">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="color:#555;font-size:13px">Liike ${idx + 1}</span>
+            <button class="btn-danger btn-small" onclick="poistaLiike(${idx})" style="padding:4px 10px;font-size:13px">Poista</button>
+          </div>
+          <input type="text" value="${escapeHtml(l.nimi)}" oninput="paivitaLiikeNimi(${idx}, this.value)" placeholder="Liikkeen nimi">
+          <input type="text" value="${escapeHtml(l.tavoite)}" oninput="paivitaLiikeTavoite(${idx}, this.value)" placeholder="Tavoite, esim. 4 × 5-8" style="margin-top:8px">
+        </div>
+      `).join('')}
+    </div>
+
+    <div style="display:flex;gap:8px">
+      <button class="btn-secondary" onclick="lisaaLiike()">+ Lisää liike</button>
+      <button class="btn-danger btn-small" onclick="poistaOhjelma(${state.muokattavaIdx})">Poista ohjelma</button>
+    </div>
+  `;
+}
+
+// ============================================================
+// ACTIONS
+// ============================================================
+function setView(v) { state.view = v; render(); }
+
+function aloitaTreeni(tyyppi) {
+  state.aktiivinenTreeni = {
+    tyyppi,
+    alkuaika: new Date().toISOString(),
+    liikkeet: {},
+    muistiinpano: '',
+    lampottelu: false,
+    sauna: false,
+    kylmaallas: false
+  };
+  saveAktiivinen();
+  state.view = 'treeni';
+  render();
+}
+
+function paivitaLiike(liikeNimi, arvo) {
+  state.aktiivinenTreeni.liikkeet[liikeNimi] = arvo;
+  saveAktiivinen();
+}
+
+function togglePalautus(kentta) {
+  state.aktiivinenTreeni[kentta] = !state.aktiivinenTreeni[kentta];
+  saveAktiivinen();
+  render();
+}
+
+function paivitaTavoite(kentta, arvo) {
+  const num = parseFloat(arvo) || 0;
+  state.tavoitteet[kentta] = num;
+  save();
+  render();
+}
+
+function paivitaJuoksu() {
+  state.aktiivinenTreeni.matka = document.getElementById('matkaInput').value;
+  state.aktiivinenTreeni.kesto = document.getElementById('kestoInput').value;
+  state.aktiivinenTreeni.muistiinpano = document.getElementById('muistiinpanoInput').value;
+  saveAktiivinen();
+}
+
+function paivitaMuistiinpano() {
+  state.aktiivinenTreeni.muistiinpano = document.getElementById('muistiinpanoInput').value;
+  saveAktiivinen();
+}
+
+function tallennaTreeni() {
+  const t = state.aktiivinenTreeni;
+  state.treenit.push({
+    pvm: t.alkuaika,
+    tyyppi: t.tyyppi,
+    liikkeet: t.liikkeet,
+    matka: t.matka || null,
+    kesto: t.kesto || null,
+    muistiinpano: t.muistiinpano || '',
+    lampottelu: t.lampottelu || false,
+    sauna: t.sauna || false,
+    kylmaallas: t.kylmaallas || false
+  });
+  save();
+  state.aktiivinenTreeni = null;
+  saveAktiivinen();
+  state.view = 'home';
+  render();
+  showToast('Tallennettu!');
+}
+
+function showToast(viesti) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = viesti;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2000);
+}
+
+function peruutaTreeni() {
+  if (Object.keys(state.aktiivinenTreeni.liikkeet || {}).length > 0 ||
+      state.aktiivinenTreeni.matka || state.aktiivinenTreeni.kesto) {
+    if (!confirm('Hylätäänkö merkinnät?')) return;
+  }
+  state.aktiivinenTreeni = null;
+  saveAktiivinen();
+  state.view = 'home';
+  render();
+}
+
+function poistaTreeni(idx) {
+  if (!confirm('Poistetaanko treeni?')) return;
+  state.treenit.splice(idx, 1);
+  save();
+  render();
+}
+
+function avaaTreeni(idx) {
+  state.katsottavaTreeniIdx = idx;
+  state.view = 'treeniNakyma';
+  render();
+}
+
+function avaaLiikeTilasto(nimi) {
+  state.tilastoLiike = nimi;
+  state.view = 'liikeTilasto';
+  render();
+}
+
+function setHistoriaNakyma(nakyma) {
+  state.historiaNakyma = nakyma;
+  render();
+}
+
+function takaisinLiikkeisiin() {
+  state.historiaNakyma = 'liikkeet';
+  state.view = 'historia';
+  render();
+}
+
+function tallennaEnnatykset() {
+  const pvm = new Date().toISOString();
+  let tallennettu = 0;
+  ENNÄTYSLIIKKEET.forEach((nimi, idx) => {
+    const input = document.getElementById(`ennätys${idx}`);
+    const kg = input ? parseFloat(input.value) : NaN;
+    if (!isNaN(kg) && kg > 0) {
+      state.ennatykset.push({ pvm, nimi, kg });
+      tallennettu++;
+    }
+  });
+  if (tallennettu === 0) { alert('Syötä vähintään yksi tulos.'); return; }
+  save();
+  state.view = 'home';
+  render();
+  showToast('Ennätykset tallennettu!');
+}
+
+// --- Ohjelma-actions ---
+
+function muokkaaOhjelmaIdx(idx) {
+  state.muokattavaIdx = idx;
+  state.view = 'muokkaaOhjelma';
+  render();
+}
+
+function toggleAktiivinen(idx) {
+  state.saliohjelmat[idx].aktiivinen = !state.saliohjelmat[idx].aktiivinen;
+  save();
+  render();
+}
+
+function siirraOhjelma(idx, suunta) {
+  const uusi = idx + suunta;
+  if (uusi < 0 || uusi >= state.saliohjelmat.length) return;
+  const tmp = state.saliohjelmat[idx];
+  state.saliohjelmat[idx] = state.saliohjelmat[uusi];
+  state.saliohjelmat[uusi] = tmp;
+  save();
+  render();
+}
+
+function uusiOhjelma() {
+  state.saliohjelmat.push({ nimi: 'Uusi ohjelma', aktiivinen: true, liikkeet: [] });
+  save();
+  state.muokattavaIdx = state.saliohjelmat.length - 1;
+  state.view = 'muokkaaOhjelma';
+  render();
+}
+
+function poistaOhjelma(idx) {
+  if (!confirm(`Poistetaanko ohjelma "${state.saliohjelmat[idx].nimi}"? Historia säilyy.`)) return;
+  state.saliohjelmat.splice(idx, 1);
+  save();
+  state.view = 'asetukset';
+  render();
+}
+
+function paivitaOhjelmanNimi(arvo) {
+  state.saliohjelmat[state.muokattavaIdx].nimi = arvo;
+  save();
+}
+
+function paivitaLiikeNimi(idx, arvo) {
+  const ohjelma = state.saliohjelmat[state.muokattavaIdx];
+  const vanhaNimi = ohjelma.liikkeet[idx].nimi;
+  ohjelma.liikkeet[idx].nimi = arvo;
+  if (vanhaNimi !== arvo && arvo.trim()) {
+    state.treenit.forEach(t => {
+      if (t.liikkeet && t.liikkeet[vanhaNimi] !== undefined) {
+        t.liikkeet[arvo] = t.liikkeet[vanhaNimi];
+        delete t.liikkeet[vanhaNimi];
+      }
+    });
+  }
+  save();
+}
+
+function paivitaLiikeTavoite(idx, arvo) {
+  state.saliohjelmat[state.muokattavaIdx].liikkeet[idx].tavoite = arvo;
+  save();
+}
+
+function poistaLiike(idx) {
+  if (!confirm('Poistetaanko liike?')) return;
+  state.saliohjelmat[state.muokattavaIdx].liikkeet.splice(idx, 1);
+  save();
+  render();
+}
+
+function lisaaLiike() {
+  state.saliohjelmat[state.muokattavaIdx].liikkeet.push({ nimi: '', tavoite: '' });
+  save();
+  render();
+}
+
+function tyhjennaData() {
+  if (!confirm('Poistetaanko KAIKKI data? Tätä ei voi peruuttaa.')) return;
+  if (!confirm('Oletko varma? Kaikki treenit ja ohjelmamuutokset poistetaan.')) return;
+  localStorage.clear();
+  state = {
+    view: 'home',
+    saliohjelmat: JSON.parse(JSON.stringify(DEFAULT_SALIOHJELMAT)),
+    treenit: [],
+    ennatykset: [],
+    tavoitteet: { ...DEFAULT_TAVOITTEET },
+    aktiivinenTreeni: null,
+    muokattavaIdx: null,
+    katsottavaTreeniIdx: null,
+    historiaNakyma: 'treenit',
+    tilastoLiike: null
+  };
+  render();
+}
+
+
+// ============================================================
+// INIT
+// ============================================================
+(function() {
+  if (!localStorage.getItem('testiDataPoistettu')) {
+    localStorage.removeItem('treenit');
+    localStorage.removeItem('ennatykset');
+    state.treenit = [];
+    state.ennatykset = [];
+    localStorage.setItem('testiDataPoistettu', '1');
+    save();
+  }
+})();
+
+(function() {
+  if (!localStorage.getItem('ohjelmatPaivitetty2')) {
+    state.saliohjelmat = JSON.parse(JSON.stringify(DEFAULT_SALIOHJELMAT));
+    localStorage.setItem('ohjelmatPaivitetty2', '1');
+    save();
+  }
+})();
+
+(function() {
+  const draft = localStorage.getItem('aktiivinenTreeni');
+  if (draft) {
+    try {
+      state.aktiivinenTreeni = JSON.parse(draft);
+      state.view = 'treeni';
+    } catch(e) {
+      localStorage.removeItem('aktiivinenTreeni');
+    }
+  }
+})();
+
+render();
+</script>
+</body>
+</html>
