@@ -188,10 +188,15 @@
   <div class="app" id="app"></div>
   <nav class="nav" id="nav"></nav>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ============================================================
-// DATA — Tallennetaan localStorageen
+// DATA — Tallennetaan Supabaseen (localStorage välimuistina)
 // ============================================================
+const db = supabase.createClient(
+  'https://sqvfzigtfukuwpzsydpp.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNxdmZ6aWd0ZnVrdXdwenN5ZHBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2NDEyMzAsImV4cCI6MjA5MzIxNzIzMH0.YA1dl_xL-sZ8YssJ5LHAo1ylj9uq-XuXaGnLDFDMaEg'
+);
 
 const DEFAULT_TAVOITTEET = { salitViikossa: 0, kmViikossa: 0 };
 
@@ -247,34 +252,29 @@ const DEFAULT_SALIOHJELMAT = [
 // ============================================================
 let state = {
   view: 'home',
-  saliohjelmat: loadSaliohjelmat(),  // taulukko { nimi, aktiivinen, liikkeet[] }
-  treenit: loadTreenit(),
-  ennatykset: loadEnnatykset(),      // taulukko { pvm, nimi, kg }
-  tavoitteet: loadTavoitteet(),      // { salitViikossa, kmViikossa }
+  loading: true,
+  saliohjelmat: JSON.parse(JSON.stringify(DEFAULT_SALIOHJELMAT)),
+  treenit: [],
+  ennatykset: [],
+  tavoitteet: { ...DEFAULT_TAVOITTEET },
   aktiivinenTreeni: null,
-  muokattavaIdx: null,   // saliohjelmat-indeksi muokkauksessa
+  muokattavaIdx: null,
   katsottavaTreeniIdx: null,
-  historiaNakyma: 'treenit',  // 'treenit' | 'liikkeet'
+  historiaNakyma: 'treenit',
   tilastoLiike: null
 };
 
-function loadSaliohjelmat() {
-  // Uusi avain 'saliohjelmat' — taulukkomuoto
+function loadSaliohjelmatLocal() {
   const saved = localStorage.getItem('saliohjelmat');
-  if (saved) {
-    try { return JSON.parse(saved); } catch(e) {}
-  }
-  // Migraatio vanhasta objektirakenteesta
+  if (saved) { try { return JSON.parse(saved); } catch(e) {} }
   const vanha = localStorage.getItem('ohjelmat');
   if (vanha) {
     try {
       const obj = JSON.parse(vanha);
-      // Muodostetaan järjestetty taulukko (Lenkki jätetään pois)
       const jarjestys = ['Push', 'Pull', 'Legs'];
       const result = jarjestys
         .filter(k => obj[k] && obj[k].liikkeet && obj[k].liikkeet.length > 0)
         .map(k => ({ nimi: k, aktiivinen: true, liikkeet: obj[k].liikkeet }));
-      // Lisää mahdolliset muut (ei Lenkki)
       Object.keys(obj).forEach(k => {
         if (!jarjestys.includes(k) && k !== 'Lenkki' && k !== 'Pitkä lenkki') {
           result.push({ nimi: k, aktiivinen: true, liikkeet: obj[k].liikkeet || [] });
@@ -283,29 +283,35 @@ function loadSaliohjelmat() {
       return result;
     } catch(e) {}
   }
-  return JSON.parse(JSON.stringify(DEFAULT_SALIOHJELMAT));
+  return null;
 }
 
-function loadTreenit() {
+function loadTreenitLocal() {
   const saved = localStorage.getItem('treenit');
   if (!saved) return [];
-  const parsed = JSON.parse(saved);
-  parsed.forEach(t => {
-    if (t.tyyppi === 'Pitkä lenkki') t.tyyppi = 'Lenkki';
-  });
-  return parsed;
+  try {
+    const parsed = JSON.parse(saved);
+    parsed.forEach(t => { if (t.tyyppi === 'Pitkä lenkki') t.tyyppi = 'Lenkki'; });
+    return parsed;
+  } catch(e) { return []; }
 }
 
-function loadEnnatykset() {
+function loadEnnatyksetLocal() {
   const saved = localStorage.getItem('ennatykset');
   if (!saved) return [];
   try { return JSON.parse(saved); } catch(e) { return []; }
 }
 
-function loadTavoitteet() {
+function loadTavoitteetLocal() {
   const saved = localStorage.getItem('tavoitteet');
   if (!saved) return { ...DEFAULT_TAVOITTEET };
   try { return { ...DEFAULT_TAVOITTEET, ...JSON.parse(saved) }; } catch(e) { return { ...DEFAULT_TAVOITTEET }; }
+}
+
+function mergeTreenit(a, b) {
+  const pvmSet = new Set(a.map(t => t.pvm));
+  const unique = b.filter(t => !pvmSet.has(t.pvm));
+  return [...a, ...unique].sort((x, y) => new Date(x.pvm) - new Date(y.pvm));
 }
 
 function save() {
@@ -314,9 +320,13 @@ function save() {
     localStorage.setItem('treenit', JSON.stringify(state.treenit));
     localStorage.setItem('ennatykset', JSON.stringify(state.ennatykset));
     localStorage.setItem('tavoitteet', JSON.stringify(state.tavoitteet));
-  } catch (e) {
-    alert('Tallennus epäonnistui: ' + e.message);
-  }
+  } catch(e) {}
+  Promise.all([
+    db.from('app_data').upsert({ key: 'saliohjelmat', value: state.saliohjelmat }),
+    db.from('app_data').upsert({ key: 'treenit', value: state.treenit }),
+    db.from('app_data').upsert({ key: 'ennatykset', value: state.ennatykset }),
+    db.from('app_data').upsert({ key: 'tavoitteet', value: state.tavoitteet }),
+  ]).catch(e => console.error('Supabase save failed:', e));
 }
 
 function saveAktiivinen() {
@@ -363,7 +373,7 @@ function viimeSarjat(liikeNimi) {
   for (let i = state.treenit.length - 1; i >= 0; i--) {
     const t = state.treenit[i];
     if (t.liikkeet && t.liikkeet[liikeNimi]) {
-      return { sarjat: t.liikkeet[liikeNimi], pvm: t.pvm };
+      return { sarjat: t.liikkeet[liikeNimi], pvm: t.pvm, ehdotus: (t.painoEhdotukset && t.painoEhdotukset[liikeNimi]) || null };
     }
   }
   return null;
@@ -431,6 +441,12 @@ function getLiikkeetJoillaTilasto() {
 function render() {
   const app = document.getElementById('app');
   const nav = document.getElementById('nav');
+
+  if (state.loading) {
+    app.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:60vh;color:#444;font-size:15px">Ladataan...</div>';
+    nav.innerHTML = '';
+    return;
+  }
 
   if (state.view === 'home') app.innerHTML = renderHome();
   else if (state.view === 'treeni') app.innerHTML = renderTreeni();
@@ -645,10 +661,14 @@ function renderTreeni() {
           <div class="liike-row">
             <div class="liike-name">${escapeHtml(l.nimi)}</div>
             <div class="liike-tavoite">${escapeHtml(l.tavoite)}</div>
-            ${viim ? `<div class="liike-viime">Viime: ${escapeHtml(viim.sarjat)}${isNaN(parseFloat(viim.sarjat)) ? '' : ' kg'} <span style="color:#444">(${formatPvm(viim.pvm)})</span></div>` : '<div class="liike-viime" style="color:#444">Ei aiempaa</div>'}
+            ${viim ? `<div class="liike-viime">Viime: ${escapeHtml(viim.sarjat)}${isNaN(parseFloat(viim.sarjat)) ? '' : ' kg'} <span style="color:#444">(${formatPvm(viim.pvm)})</span>${viim.ehdotus === '+' ? ' <span style="font-size:11px;color:#4ade80;background:#001a0d;padding:2px 8px;border-radius:20px;border:1px solid rgba(74,222,128,0.2);font-weight:600">+</span>' : viim.ehdotus === '-' ? ' <span style="font-size:11px;color:#f87171;background:#1a0000;padding:2px 8px;border-radius:20px;border:1px solid rgba(248,113,113,0.2);font-weight:600">−</span>' : ''}</div>` : '<div class="liike-viime" style="color:#444">Ei aiempaa</div>'}
             <div class="liike-input-row">
-              <input type="number" inputmode="decimal" value="${escapeHtml(arvo)}" placeholder="—" data-liike="${escapeHtml(l.nimi)}" oninput="paivitaLiike(this.dataset.liike, this.value)">
+              <input type="text" inputmode="decimal" value="${escapeHtml(arvo)}" placeholder="—" data-liike="${escapeHtml(l.nimi)}" oninput="paivitaLiike(this.dataset.liike, this.value)">
               <span class="kg-label">kg</span>
+              <div style="display:flex;flex-direction:column;gap:2px;margin-left:6px">
+                <button onclick="togglePainoEhdotus('${escapeHtml(l.nimi)}', '+')" style="padding:2px 7px;font-size:11px;border-radius:5px;border:1px solid ${(t.painoEhdotukset && t.painoEhdotukset[l.nimi] === '+') ? 'rgba(74,222,128,0.4)' : '#1c1c1c'};background:${(t.painoEhdotukset && t.painoEhdotukset[l.nimi] === '+') ? '#001a0d' : '#111'};color:${(t.painoEhdotukset && t.painoEhdotukset[l.nimi] === '+') ? '#4ade80' : '#444'};line-height:1">+</button>
+                <button onclick="togglePainoEhdotus('${escapeHtml(l.nimi)}', '-')" style="padding:2px 7px;font-size:11px;border-radius:5px;border:1px solid ${(t.painoEhdotukset && t.painoEhdotukset[l.nimi] === '-') ? 'rgba(248,113,113,0.4)' : '#1c1c1c'};background:${(t.painoEhdotukset && t.painoEhdotukset[l.nimi] === '-') ? '#1a0000' : '#111'};color:${(t.painoEhdotukset && t.painoEhdotukset[l.nimi] === '-') ? '#f87171' : '#444'};line-height:1">−</button>
+              </div>
             </div>
           </div>
         `;
@@ -1039,7 +1059,8 @@ function aloitaTreeni(tyyppi) {
     muistiinpano: '',
     lampottelu: false,
     sauna: false,
-    kylmaallas: false
+    kylmaallas: false,
+    painoEhdotukset: {}
   };
   saveAktiivinen();
   state.view = 'treeni';
@@ -1053,6 +1074,17 @@ function paivitaLiike(liikeNimi, arvo) {
 
 function togglePalautus(kentta) {
   state.aktiivinenTreeni[kentta] = !state.aktiivinenTreeni[kentta];
+  saveAktiivinen();
+  render();
+}
+
+function togglePainoEhdotus(liikeNimi, suunta) {
+  if (!state.aktiivinenTreeni.painoEhdotukset) state.aktiivinenTreeni.painoEhdotukset = {};
+  if (state.aktiivinenTreeni.painoEhdotukset[liikeNimi] === suunta) {
+    delete state.aktiivinenTreeni.painoEhdotukset[liikeNimi];
+  } else {
+    state.aktiivinenTreeni.painoEhdotukset[liikeNimi] = suunta;
+  }
   saveAktiivinen();
   render();
 }
@@ -1087,7 +1119,8 @@ function tallennaTreeni() {
     muistiinpano: t.muistiinpano || '',
     lampottelu: t.lampottelu || false,
     sauna: t.sauna || false,
-    kylmaallas: t.kylmaallas || false
+    kylmaallas: t.kylmaallas || false,
+    painoEhdotukset: t.painoEhdotukset || {}
   });
   save();
   state.aktiivinenTreeni = null;
@@ -1244,12 +1277,14 @@ function lisaaLiike() {
   render();
 }
 
-function tyhjennaData() {
+async function tyhjennaData() {
   if (!confirm('Poistetaanko KAIKKI data? Tätä ei voi peruuttaa.')) return;
   if (!confirm('Oletko varma? Kaikki treenit ja ohjelmamuutokset poistetaan.')) return;
   localStorage.clear();
+  await db.from('app_data').delete().in('key', ['treenit', 'ennatykset', 'saliohjelmat', 'tavoitteet']);
   state = {
     view: 'home',
+    loading: false,
     saliohjelmat: JSON.parse(JSON.stringify(DEFAULT_SALIOHJELMAT)),
     treenit: [],
     ennatykset: [],
@@ -1267,26 +1302,37 @@ function tyhjennaData() {
 // ============================================================
 // INIT
 // ============================================================
-(function() {
-  if (!localStorage.getItem('testiDataPoistettu')) {
-    localStorage.removeItem('treenit');
-    localStorage.removeItem('ennatykset');
-    state.treenit = [];
-    state.ennatykset = [];
-    localStorage.setItem('testiDataPoistettu', '1');
-    save();
-  }
-})();
+async function initApp() {
+  render(); // näyttää "Ladataan..."
+  try {
+    const [salio, treeni, ennätys, tavoite] = await Promise.all([
+      db.from('app_data').select('value').eq('key', 'saliohjelmat').maybeSingle(),
+      db.from('app_data').select('value').eq('key', 'treenit').maybeSingle(),
+      db.from('app_data').select('value').eq('key', 'ennatykset').maybeSingle(),
+      db.from('app_data').select('value').eq('key', 'tavoitteet').maybeSingle(),
+    ]);
 
-(function() {
-  if (!localStorage.getItem('ohjelmatPaivitetty2')) {
-    state.saliohjelmat = JSON.parse(JSON.stringify(DEFAULT_SALIOHJELMAT));
-    localStorage.setItem('ohjelmatPaivitetty2', '1');
-    save();
-  }
-})();
+    const localTreenit = loadTreenitLocal();
+    const supabaseTreenit = treeni.data?.value || [];
+    const yhdistettyTreenit = mergeTreenit(supabaseTreenit, localTreenit);
 
-(function() {
+    const localSaliohjelmat = loadSaliohjelmatLocal();
+    state.saliohjelmat = salio.data?.value || localSaliohjelmat || JSON.parse(JSON.stringify(DEFAULT_SALIOHJELMAT));
+    state.treenit = yhdistettyTreenit;
+    state.ennatykset = ennätys.data?.value || loadEnnatyksetLocal();
+    state.tavoitteet = tavoite.data?.value || loadTavoitteetLocal();
+
+    if (localTreenit.length > 0 || (localSaliohjelmat && !salio.data)) {
+      save();
+    }
+  } catch(e) {
+    console.error('Supabase load failed, falling back to localStorage:', e);
+    state.saliohjelmat = loadSaliohjelmatLocal() || JSON.parse(JSON.stringify(DEFAULT_SALIOHJELMAT));
+    state.treenit = loadTreenitLocal();
+    state.ennatykset = loadEnnatyksetLocal();
+    state.tavoitteet = loadTavoitteetLocal();
+  }
+
   const draft = localStorage.getItem('aktiivinenTreeni');
   if (draft) {
     try {
@@ -1296,9 +1342,12 @@ function tyhjennaData() {
       localStorage.removeItem('aktiivinenTreeni');
     }
   }
-})();
 
-render();
+  state.loading = false;
+  render();
+}
+
+initApp();
 </script>
 </body>
 </html>
