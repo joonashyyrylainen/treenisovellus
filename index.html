@@ -459,7 +459,7 @@ function render() {
 
   const navActive = v => (state.view === v || (v === 'home' && state.view === 'ennatysLomake') || (v === 'historia' && (state.view === 'treeniNakyma' || state.view === 'liikeTilasto')) || (v === 'asetukset' && state.view === 'muokkaaOhjelma')) ? 'active' : '';
   nav.innerHTML = `
-    <button onclick="setView('home')" class="${navActive('home')}" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 8px">
+    <button onclick="setView(state.aktiivinenTreeni ? 'treeni' : 'home')" class="${navActive('home')}" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 8px">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.09 13.5H10L9 22l9.91-11.5H14L13 2z"/></svg>
       <span style="font-size:10px;letter-spacing:0.5px">Treeni</span>
     </button>
