@@ -915,7 +915,10 @@ function renderTreeniNakyma() {
   const t = state.treenit[state.katsottavaTreeniIdx];
   if (!t) return `<h1>Treeniä ei löytynyt</h1><button class="btn-secondary" onclick="setView('historia')">Takaisin</button>`;
 
-  const liikkeetMerkitty = t.liikkeet ? Object.keys(t.liikkeet).filter(k => t.liikkeet[k]) : [];
+  const ohjelma = state.saliohjelmat.find(o => o.nimi === t.tyyppi);
+  const jarjestys = ohjelma ? ohjelma.liikkeet.map(l => l.nimi) : [];
+  const muut = Object.keys(t.liikkeet || {}).filter(k => !jarjestys.includes(k));
+  const liikkeetMerkitty = [...jarjestys, ...muut].filter(k => t.liikkeet && t.liikkeet[k]);
 
   return `
     <button class="btn-secondary btn-small" onclick="setView('historia')" style="margin-bottom: 12px;">← Historia</button>
