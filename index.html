@@ -383,6 +383,20 @@ function onJuoksu(tyyppi) {
   return tyyppi === 'Lenkki';
 }
 
+function formatKesto(kesto) {
+  if (!kesto) return '';
+  let min;
+  if (String(kesto).includes(':')) {
+    const [h, m] = String(kesto).split(':').map(Number);
+    min = h * 60 + (m || 0);
+  } else {
+    min = parseFloat(kesto);
+  }
+  if (isNaN(min)) return String(kesto);
+  min = Math.round(min);
+  return min >= 60 ? `${Math.floor(min / 60)}h ${min % 60}min` : `${min} min`;
+}
+
 const ENNÄTYSLIIKKEET = ['Takakyykky', 'Penkki', 'Maastaveto'];
 
 function onkoEnnatyksetTallaKuulla() {
@@ -632,8 +646,8 @@ function renderTreeni() {
         <label>Matka (km)</label>
         <input type="number" inputmode="decimal" id="matkaInput" value="${t.matka || ''}" placeholder="esim. 10" oninput="paivitaJuoksu()">
 
-        <label>Kesto (esim. 1:05 tai 65)</label>
-        <input type="text" id="kestoInput" value="${t.kesto || ''}" placeholder="1:05" oninput="paivitaJuoksu()">
+        <label>Kesto (min)</label>
+        <input type="text" inputmode="decimal" id="kestoInput" value="${t.kesto || ''}" placeholder="45" oninput="paivitaJuoksu()">
 
         <label>Muistiinpanot</label>
         <textarea id="muistiinpanoInput" oninput="paivitaJuoksu()" placeholder="Vapaa kommentti">${t.muistiinpano || ''}</textarea>
@@ -931,17 +945,21 @@ function renderTreeniNakyma() {
     ${onJuoksu(t.tyyppi) ? `
       <div class="card" style="margin-top: 20px;">
         ${t.matka ? `<div style="margin-bottom: 8px;"><span class="muted">Matka:</span> <strong>${escapeHtml(t.matka)} km</strong></div>` : ''}
-        ${t.kesto ? `<div style="margin-bottom: 8px;"><span class="muted">Kesto:</span> <strong>${escapeHtml(t.kesto)}</strong></div>` : ''}
+        ${t.kesto ? `<div style="margin-bottom: 8px;"><span class="muted">Kesto:</span> <strong>${formatKesto(t.kesto)}</strong></div>` : ''}
         ${!t.matka && !t.kesto ? '<div class="muted">Ei merkintöjä</div>' : ''}
       </div>
     ` : `
       <div class="card" style="margin-top: 20px;">
-        ${liikkeetMerkitty.length === 0 ? '<div class="muted">Ei liikkeitä merkitty</div>' : liikkeetMerkitty.map(liikenimi => `
+        ${liikkeetMerkitty.length === 0 ? '<div class="muted">Ei liikkeitä merkitty</div>' : (() => {
+          const tavoiteMap = ohjelma ? Object.fromEntries(ohjelma.liikkeet.map(l => [l.nimi, l.tavoite])) : {};
+          return liikkeetMerkitty.map(liikenimi => `
           <div class="liike-row">
             <div class="liike-name">${escapeHtml(liikenimi)}</div>
+            ${tavoiteMap[liikenimi] ? `<div class="liike-tavoite">${escapeHtml(tavoiteMap[liikenimi])}</div>` : ''}
             <div class="liike-viime" style="color: #aaa; margin-top: 6px;">${escapeHtml(t.liikkeet[liikenimi])}${!isNaN(parseFloat(t.liikkeet[liikenimi])) && t.liikkeet[liikenimi] !== '' ? ' kg' : ''}</div>
           </div>
-        `).join('')}
+        `).join('');
+        })()}
       </div>
     `}
 
